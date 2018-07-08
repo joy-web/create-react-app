@@ -74,6 +74,10 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
         sourceMap: shouldUseSourceMap,
       },
     },
+    {
+      // Webpack loader that resolves relative paths in url() statements based on the original source file
+      loader: require.resolve('resolve-url-loader'),
+    },
   ];
   if (preProcessor) {
     loaders.push({
@@ -245,7 +249,13 @@ module.exports = {
           // "url" loader works just like "file" loader but it also embeds
           // assets smaller than specified size as data URLs to avoid requests.
           {
-            test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
+            test: [
+              /\.bmp$/,
+              /\.gif$/,
+              /\.jpe?g$/,
+              /\.png$/,
+              /\.(svg|woff2?|ttf|eot)$/,
+            ],
             loader: require.resolve('url-loader'),
             options: {
               limit: 10000,
@@ -301,7 +311,9 @@ module.exports = {
                   babelrc: false,
                   compact: false,
                   presets: [
-                    require.resolve('@weus/babel-preset-react-app/dependencies'),
+                    require.resolve(
+                      '@weus/babel-preset-react-app/dependencies'
+                    ),
                   ],
                   cacheDirectory: true,
                   highlightCode: true,

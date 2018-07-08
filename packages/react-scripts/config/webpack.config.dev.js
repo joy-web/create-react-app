@@ -25,6 +25,8 @@ const ManifestPlugin = require('webpack-manifest-plugin');
 // Webpack uses `publicPath` to determine where the app is being served from.
 // In development, we always serve from the root. This makes config easier.
 const publicPath = '/';
+// Source maps are resource heavy and can cause out of memory issue for large source files.
+const shouldUseSourceMap = process.env.GENERATE_SOURCEMAP !== 'false';
 // `publicUrl` is just like `publicPath`, but we will provide it to our app
 // as %PUBLIC_URL% in `index.html` and `process.env.PUBLIC_URL` in JavaScript.
 // Omit trailing slash as %PUBLIC_PATH%/xyz looks better than %PUBLIC_PATH%xyz.
@@ -63,9 +65,18 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
         ],
       },
     },
+    {
+      // Webpack loader that resolves relative paths in url() statements based on the original source file
+      loader: require.resolve('resolve-url-loader'),
+    },
   ];
   if (preProcessor) {
-    loaders.push(require.resolve(preProcessor));
+    loaders.push({
+      loader: require.resolve(preProcessor),
+      options: {
+        sourceMap: shouldUseSourceMap,
+      },
+    });
   }
   return loaders;
 };
@@ -206,7 +217,13 @@ module.exports = {
           // smaller than specified limit in bytes as data URLs to avoid requests.
           // A missing `test` is equivalent to a match.
           {
-            test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
+            test: [
+              /\.bmp$/,
+              /\.gif$/,
+              /\.jpe?g$/,
+              /\.png$/,
+              /\.(svg|woff2?|ttf|eot)$/,
+            ],
             loader: require.resolve('url-loader'),
             options: {
               limit: 10000,
@@ -275,7 +292,9 @@ module.exports = {
                   babelrc: false,
                   compact: false,
                   presets: [
-                    require.resolve('@weus/babel-preset-react-app/dependencies'),
+                    require.resolve(
+                      '@weus/babel-preset-react-app/dependencies'
+                    ),
                   ],
                   cacheDirectory: true,
                   highlightCode: true,
